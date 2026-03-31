@@ -1,0 +1,27 @@
+# --- TouchDesigner ---
+*.toe.autosave
+*.tox.autosave
+*.crash.*
+
+# --- ESP-IDF (ESP32) ---
+build/
+build_*_*/
+*.o
+*.bin
+*.elf
+*.map
+
+sdkconfig
+sdkconfig.old
+dependencies.lock
+managed_components/
+
+__pycache__/
+.pytest_cache/
+pytest_embedded_log/
+
+# --- Generic ---
+.vscode/
+.DS_Store
+Thumbs.db
+
