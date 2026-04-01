@@ -1,5 +1,7 @@
 rewrite the audioAnalysis utility into a custom tox
 mediapipe
+- direction of eye tracking
+- hand controls
 add ui to controller tox
 ableton
 kinect (syphon)
