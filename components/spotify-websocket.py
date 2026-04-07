@@ -2,6 +2,7 @@ import asyncio
 import websockets
 import requests
 import json
+from collections import Counter
 
 
 def get_spotify_ws_url():
@@ -27,7 +28,7 @@ async def get_enhanced_info():
     async with websockets.connect(ws_url) as websocket:
         await websocket.send(json.dumps({"id": 1, "method": "Runtime.enable"}))
 
-        js_code = """
+        js_code = '''
         (() => {
             // 1. Basic Meta
             const track = document.querySelector('[data-testid="context-item-info-title"]')?.innerText;
@@ -52,7 +53,7 @@ async def get_enhanced_info():
                 active_lyric: activeLine ? activeLine.innerText : "Lyrics panel not visible"
             };
         })()
-        """
+        '''
 
         while True:
             await websocket.send(json.dumps({
@@ -68,17 +69,22 @@ async def get_enhanced_info():
                 print(f"Lyric: {val['active_lyric']}")
                 print("-" * 20)
 
-            await asyncio.sleep(0.5)  # Lower sleep for better "live" tracking
+            await asyncio.sleep(0.1)  # lower sleep for better "live" tracking
 
 
 def get_active_lyric(lines):
     if not lines or len(lines) < 3:
-        return "††† Not enough lines to determine state †††"
-    # TODO: what to do before the song starts highlighting? and when the first line comes up it's missing
-    for i in range(2, len(lines)-2):  # -1 is 3 blobs long
-        # print(f'checking line {i} v {i+1}')
-        if lines[i]['className'] != lines[i+1]['className']:
-            return lines[i+1]['text']
+        return "† [open panel] †"
+
+    # blank lines have 3 terms
+    counter = Counter(l['className']
+                      for l in lines if l['className'].count(' ') != 2)
+    uniques = [d for d in lines if counter[d['className']] == 1]
+    if uniques:
+        result = uniques[-1]
+        return result['text']
+    else:
+        return '†††'  # start/end of song
 
 
 async def get_track_info():
@@ -89,27 +95,26 @@ async def get_track_info():
     async with websockets.connect(ws_url) as websocket:
         await websocket.send(json.dumps({"id": 1, "method": "Runtime.enable"}))
 
-        # v7 debug
-        js_code = """
-(() => {
-    const lines = Array.from(document.querySelectorAll('[data-testid="lyrics-line"]'));
+        js_code = '''
+        (() => {
+            const lines = Array.from(document.querySelectorAll('[data-testid="lyrics-line"]'));
 
-    if (lines.length === 0) {
-        return { error: "No lyric lines found. Is the lyrics panel open?" };
-    }
+            if (lines.length === 0) {
+                return { error: "No lyric lines found. Is the lyrics panel open?" };
+            }
 
-    // Map every line to its text and its full class attribute
-    const debugInfo = lines.map((line, index) => {
-        return {
-            index: index,
-            text: line.innerText.trim(),
-            className: line.className
-        };
-    });
+            // Map every line to its text and its full class attribute
+            const debugInfo = lines.map((line, index) => {
+                return {
+                    index: index,
+                    text: line.innerText.trim(),
+                    className: line.className
+                };
+            });
 
-    return debugInfo;
-})()
-"""
+            return debugInfo;
+        })()
+        '''
 
         print("Press Ctrl+C to stop.\n")
         last = ''
@@ -129,14 +134,13 @@ async def get_track_info():
             data = json.loads(response)
 
             if "result" in data and "result" in data["result"]:
-                # can't seem to get the changed value out in the injected js so handle it here instead
+                # can't seem to get the changed value out in the injected JS so handle it here instead
                 lines = data["result"]["result"]["value"]
-                # last = get_active_lyric(lines)
                 if last != (active := get_active_lyric(lines)):
                     last = active
                     print(active)
 
-            await asyncio.sleep(0.01)
+            await asyncio.sleep(0.01)  # 0.005 for "realtime"
 
 if __name__ == "__main__":
     try:
