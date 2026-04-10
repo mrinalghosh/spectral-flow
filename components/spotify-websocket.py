@@ -79,8 +79,11 @@ def get_active_lyric(lines):
     # blank lines have 3 terms
     counter = Counter(l['className']
                       for l in lines if l['className'].count(' ') != 2)
+    # TODO: second last line doesn't work aaaaaaabc (?)
     uniques = [d for d in lines if counter[d['className']] == 1]
+    print(uniques)
     if uniques:
+        # we don't want to do this when it's the second last line
         result = uniques[-1]
         return result['text']
     else:
@@ -140,7 +143,7 @@ async def get_track_info():
                     last = active
                     print(active)
 
-            await asyncio.sleep(0.01)  # 0.005 for "realtime"
+            await asyncio.sleep(1)  # 0.005 for "realtime"
 
 if __name__ == "__main__":
     try:
