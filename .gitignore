@@ -20,8 +20,13 @@ __pycache__/
 .pytest_cache/
 pytest_embedded_log/
 
+# --- Media pipeline ---
+# Raw screen recordings / TD movie exports — staging only, never committed.
+# The encoded, web-optimized output in docs/media/ IS committed (GitHub Pages serves it).
+recordings/
+
 # --- Generic ---
 .vscode/
 .DS_Store
 Thumbs.db
-
+.playwright-mcp/
